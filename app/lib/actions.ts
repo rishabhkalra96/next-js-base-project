@@ -26,15 +26,20 @@ export default async function createInvoice(formData: FormData) {
     parsedFormData.amount = parsedFormData.amount * 100;
     const currentDate = new Date().toISOString().split('T')[0];
 
-    //store in db
-    sql`INSERT INTO invoices (customer_id, amount, status, date)
-    VALUES (${parsedFormData.customerId}, ${parsedFormData.amount}, ${parsedFormData.status}, ${currentDate})`;
-
-
-    // clean browser cache that nextJS does by default for routes
-    revalidatePath('/dashboard/invoices');
-    // navigate back to invoices
-    redirect('/dashboard/invoices');
+    try {
+        //store in db
+        sql`INSERT INTO invoices (customer_id, amount, status, date)
+        VALUES (${parsedFormData.customerId}, ${parsedFormData.amount}, ${parsedFormData.status}, ${currentDate})`;
+        // clean browser cache that nextJS does by default for routes
+        revalidatePath('/dashboard/invoices');
+        // navigate back to invoices
+        redirect('/dashboard/invoices');
+    } catch(e) {
+        return {
+            message: "Database Error: Failed to create invoice",
+            error: e
+        };
+    }
 }
 
 const UpdateInvoice = formSchema.omit({id: true, date: true});
@@ -51,27 +56,40 @@ export async function updateInvoiceById(formData: FormData, id: string) {
 
     parsedFormData.amount = parsedFormData.amount * 100;
 
-    //store in db
-    await sql`UPDATE invoices
-    SET customer_id = ${parsedFormData.customerId},
-    amount = ${parsedFormData.amount},
-    status = ${parsedFormData.status}
-    WHERE id = ${id}`;
+    try {
+        //store in db
+        await sql`UPDATE invoices
+        SET customer_id = ${parsedFormData.customerId},
+        amount = ${parsedFormData.amount},
+        status = ${parsedFormData.status}
+        WHERE id = ${id}`;
 
-    // clean browser cache that nextJS does by default for routes
-    revalidatePath('/dashboard/invoices');
-    // navigate back to invoices
-    redirect('/dashboard/invoices');
+        // clean browser cache that nextJS does by default for routes
+        revalidatePath('/dashboard/invoices');
+        // navigate back to invoices
+        redirect('/dashboard/invoices');
+    } catch(e) {
+        return {
+            message: "Database Error: Failed to update invoice",
+            error: e
+        };
+    }
 }
 
 export async function deleteInvoiceById(id: string) {
+    try {
+        //store in db
+        await sql`DELETE FROM invoices
+        WHERE id = ${id}`;
 
-    //store in db
-    await sql`DELETE FROM invoices
-    WHERE id = ${id}`;
-
-    // clean browser cache that nextJS does by default for routes
-    revalidatePath('/dashboard/invoices');
-    // navigate back to invoices
-    redirect('/dashboard/invoices');
+        // clean browser cache that nextJS does by default for routes
+        revalidatePath('/dashboard/invoices');
+        // navigate back to invoices
+        redirect('/dashboard/invoices');
+    } catch(e) {
+        return {
+            message: "Database Error: Failed to delete invoice",
+            error: e
+        };
+    }
 }
