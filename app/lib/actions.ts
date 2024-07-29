@@ -64,16 +64,24 @@ export default async function createInvoice(prevState: State, formData: FormData
 
 const UpdateInvoice = formSchema.omit({id: true, date: true});
 
-export async function updateInvoiceById(formData: FormData, id: string) {
+export async function updateInvoiceById(id: string, _prevState: State, formData: FormData): Promise<State> {
 
+    // console.log("recieved form data ", formData);
     const rawFormData = {
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
         status: formData.get('status'),
     };
 
-    let parsedFormData = UpdateInvoice.parse(rawFormData);
+    let isParsed = UpdateInvoice.safeParse(rawFormData);
 
+    if (!isParsed.success) {
+        return {
+            errors: isParsed.error.flatten().fieldErrors,
+            message: "Missing Fields data. Failed to update invoice"
+        }
+    }
+    const parsedFormData = isParsed.data;
     parsedFormData.amount = parsedFormData.amount * 100;
 
     try {
@@ -83,16 +91,15 @@ export async function updateInvoiceById(formData: FormData, id: string) {
         amount = ${parsedFormData.amount},
         status = ${parsedFormData.status}
         WHERE id = ${id}`;
-
-        // clean browser cache that nextJS does by default for routes
-        revalidatePath('/dashboard/invoices');
-        // navigate back to invoices
-        redirect('/dashboard/invoices');
     } catch(e) {
         return {
             message: "Database Error: Failed to update invoice",
         };
     }
+    // clean browser cache that nextJS does by default for routes
+    revalidatePath('/dashboard/invoices');
+    // navigate back to invoices
+    redirect('/dashboard/invoices');
 }
 
 export async function deleteInvoiceById(id: string) {
